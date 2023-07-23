@@ -121,7 +121,7 @@ output_parse_serial(struct output_parse_state * s, char c)
 	if (c == ':') die("too many colons (:)");
 	if (c == ',') return output_parse_next_output(s);
 	add_digit(&s->output->serial, c);
-	return (output_parse_func)output_parse_model;
+	return (output_parse_func)output_parse_serial;
 }
 
 struct output *
