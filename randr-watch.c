@@ -43,16 +43,9 @@ main(int argc, char ** argv)
 	xcb_randr_select_input(conn, window, XCB_RANDR_NOTIFY_MASK_SCREEN_CHANGE);
 	xcb_flush(conn);
 
-	xcb_timestamp_t last_time;
-	for (xcb_generic_event_t * event; (event = xcb_wait_for_event(conn)); free(event)) {
-		if (!(event->response_type & XCB_RANDR_NOTIFY_MASK_SCREEN_CHANGE))
-			continue;
-		xcb_randr_screen_change_notify_event_t * randr_event = (void *)event;
-		if (last_time == randr_event->timestamp)
-			continue;
-		last_time = randr_event->timestamp;
-		spawn(argv);
-	}
+	for (xcb_generic_event_t * event; (event = xcb_wait_for_event(conn)); free(event))
+		if (event->response_type & XCB_RANDR_NOTIFY_MASK_SCREEN_CHANGE)
+			spawn(argv);
 	xcb_disconnect(conn);
 	return 0;
 }
