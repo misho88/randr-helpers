@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <xcb/xcb.h>
 #include <xcb/randr.h>
 #include <unistd.h>
@@ -14,12 +15,26 @@ spawn(char ** argv)
 	perror("randr-watch"), exit(1);
 }
 
+void
+usage()
+{
+	fprintf(stderr, "usage: randr-watch cmd [-n|--now] [args...]\n");
+	exit(1);
+
+}
+
 int
 main(int argc, char ** argv)
 {
-	if (argc < 2) {
-		fprintf(stderr, "usage: randr-watch cmd [args...]\n");
-		exit(1);
+	if (argc < 2 || argv[1][0] == '\0') usage();
+	++argv;
+	if (argv[0][0] == '-') {
+		if (strcmp(argv[0], "-n") == 0 || strcmp(argv[0], "--now") == 0) {
+			spawn(++argv);
+		}
+		else {
+			usage();
+		}
 	}
 	xcb_connection_t * conn = xcb_connect(NULL, NULL);
 
@@ -36,7 +51,7 @@ main(int argc, char ** argv)
 		if (last_time == randr_event->timestamp)
 			continue;
 		last_time = randr_event->timestamp;
-		spawn(argv + 1);
+		spawn(argv);
 	}
 	xcb_disconnect(conn);
 	return 0;
