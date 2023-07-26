@@ -4,13 +4,17 @@
 #include <xcb/xcb.h>
 #include <xcb/randr.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 void
 spawn(char ** argv)
 {
 	pid_t pid = fork();
 	if (pid < 0) perror("randr-watch"), exit(1);
-	if (pid != 0) return;
+	if (pid != 0) {
+		if (waitpid(pid, NULL, 0) < 0) perror("randr-watch"), exit(1);
+		return;
+	};
 	execvp(argv[0], argv);
 	perror("randr-watch"), exit(1);
 }
