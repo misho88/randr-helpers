@@ -161,7 +161,7 @@ find_edid_info(xcb_connection_t * connection, xcb_randr_output_t output)
 int
 main()
 {
-	xcb_connection_t * connection = get_connection(NULL, NULL);
+	xcb_connection_t * connection = get_connection();
 
 	struct outputs outputs = get_outputs(connection);
 	for (int i = 0; i < outputs.count; i++) {
