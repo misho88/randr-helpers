@@ -1,0 +1,29 @@
+#!/usr/bin/env python3
+from subprocess import Popen, PIPE
+from argparse import ArgumentParser
+from shlex import join
+from sys import stderr
+from textwrap import indent
+from contextlib import contextmanager
+
+@contextmanager
+def run(*argv):
+    with Popen(argv, stdout=PIPE) as prc:
+        yield prc
+        if code := prc.wait():
+            exit(code)
+
+
+parser = ArgumentParser()
+args = parser.parse_args()
+
+with run('randr-list') as prc:
+    assert prc.stdout is not None
+    displays = prc.stdout.read().decode().split(',')
+connected = [ d for d in displays if d.split(':')[1] ]
+print('--case', ' --and '.join(connected), '--then')
+with run('randr-current') as prc:
+    assert prc.stdout is not None
+    for line in prc.stdout:
+        print('\t', end=line.decode())
+print("''")
