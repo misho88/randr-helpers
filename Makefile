@@ -1,5 +1,6 @@
 CFLAGS=-Wall -Wextra
 BIN=/usr/local/bin
+EXE=randr-list randr-watch randr-select randr-current randr-case
 
 all: randr-list randr-watch randr-select
 
@@ -14,7 +15,7 @@ randr-select: randr-select.c
 
 install: all
 	install -d $(DESTDIR)$(BIN)
-	install randr-list randr-watch randr-select $(DESTDIR)$(BIN)
+	install $(EXE) $(DESTDIR)$(BIN)
 
 uninstall:
-	rm -f $(DESTDIR)$(BIN)/randr-list $(DESTDIR)$(BIN)/randr-watch $(DESTDIR)$(BIN)/randr-select
+	cd $(DESTDIR)$(BIN) && rm -f $(EXE)
