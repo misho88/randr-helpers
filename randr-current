@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+from subprocess import Popen, PIPE
+from argparse import ArgumentParser
+from shlex import join
+from sys import stderr
+
+parser = ArgumentParser()
+args = parser.parse_args()
+
+
+def res(spec):
+    w, h = spec.split('x')
+    return int(w), int(h)
+
+
+def res_and_pos(spec):
+    res_spec, x, y = spec.split('+')
+    return res(res_spec), (int(x), int(y))
+
+
+def current_mode(modes):
+    return next(
+        res(mode.split(maxsplit=1)[0])
+        for mode in modes
+        if '*' in mode
+    )
+
+
+def process_block(block):
+    line, *modes = block
+    spec = line.split()
+    if spec[0] == 'Screen':
+        return
+    if spec[1] == 'disconnected':
+        yield '--output'
+        yield spec[0]
+        yield '--off'
+        return
+    elif spec[1] == 'connected':
+        yield '--output'
+        yield spec[0]
+        mode = current_mode(modes)
+        yield '--mode'
+        yield f'{mode[0]}x{mode[1]}'
+        res, pos = res_and_pos(spec[2])
+        yield '--pos'
+        yield f'{pos[0]}x{pos[1]}'
+        scale = res[0] / mode[0]
+        yield '--scale'
+        yield f'{scale:g}'
+        rotate = spec[3] if spec[3] in ('left', 'inverted', 'right') else 'normal'
+        yield '--rotate'
+        yield rotate
+
+
+def blocks(stream):
+    buffer = []
+    for line in stream:
+        buffer.append(line.decode().removesuffix('\n'))
+        if len(buffer) > 1 and not line[:1].isspace():
+            yield buffer[:-1]
+            del buffer[:-1]
+    if buffer:
+        yield buffer
+
+
+with Popen([ 'xrandr', '--query' ], stdout=PIPE) as prc:
+    assert prc.stdout is not None
+    outputs = [ output for block in blocks(prc.stdout) if (output := list(process_block(block))) ]
+    if code := prc.wait():
+        exit(code)
+
+if not outputs:
+    print(parser.prog, 'no screens found', sep=': ', file=stderr)
+    exit(1)
+
+prefix = 'xrandr'
+for output in outputs:
+    print(prefix, join(output), sep='\t')
+    prefix = ''
