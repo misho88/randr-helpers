@@ -19,14 +19,18 @@ def res_and_pos(spec):
 
 
 def current_mode(modes):
-    return next(
-        res(mode.split(maxsplit=1)[0])
-        for mode in modes
-        if '*' in mode
-    )
+    try:
+        return next(
+            res(mode.split(maxsplit=1)[0])
+            for mode in modes
+            if '*' in mode
+        )
+    except StopIteration:
+        return None
 
 
 def process_block(block):
+    from debug import debug
     line, *modes = block
     spec = line.split()
     if spec[0] == 'Screen':
@@ -40,15 +44,23 @@ def process_block(block):
         yield '--output'
         yield spec[0]
         mode = current_mode(modes)
+        if mode is None:
+            yield '--off'
+            return
         yield '--mode'
         yield f'{mode[0]}x{mode[1]}'
-        res, pos = res_and_pos(spec[2])
+        i = 2
+        if spec[i] == 'primary':
+            yield '--primary'
+            i += 1
+        res, pos = res_and_pos(spec[i])
+        i += 1
         yield '--pos'
         yield f'{pos[0]}x{pos[1]}'
-        scale = res[0] / mode[0]
+        rotate = spec[i] if spec[i] in ('left', 'inverted', 'right') else 'normal'
+        scale = res[1 if rotate in ('left', 'right') else 0] / mode[0]
         yield '--scale'
         yield f'{scale:g}'
-        rotate = spec[3] if spec[3] in ('left', 'inverted', 'right') else 'normal'
         yield '--rotate'
         yield rotate
 
