@@ -76,7 +76,7 @@ def blocks(stream):
         yield buffer
 
 
-with Popen([ 'xrandr', '--query' ], stdout=PIPE) as prc:
+with Popen([ 'xrandr', '--current', '--query' ], stdout=PIPE) as prc:
     assert prc.stdout is not None
     outputs = [ output for block in blocks(prc.stdout) if (output := list(process_block(block))) ]
     if code := prc.wait():
