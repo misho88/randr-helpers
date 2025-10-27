@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+from subprocess import Popen, PIPE
+from argparse import ArgumentParser
+from shlex import join
+from sys import stderr
+
+parser = ArgumentParser(description='find which displays a point is on')
+parser.add_argument('x', type=int, help='x-coordinate')
+parser.add_argument('y', type=int, help='y-coordinate')
+parser.add_argument('-1', '--single', action='store_true', help='stop at first match')
+args = parser.parse_args()
+
+
+def res(spec):
+    w, h = spec.split('x')
+    return int(w), int(h)
+
+
+def res_and_pos(spec):
+    res_spec, x, y = spec.split('+')
+    return res(res_spec), (int(x), int(y))
+
+
+def current_mode(modes):
+    try:
+        return next(
+            res(mode.split(maxsplit=1)[0])
+            for mode in modes
+            if '*' in mode
+        )
+    except StopIteration:
+        return None
+
+
+def process_block(block):
+    from debug import debug
+    line, *modes = block
+    spec = line.split()
+    if spec[0] == 'Screen':
+        return
+    if spec[1] == 'disconnected':
+        return
+    elif spec[1] == 'connected':
+        output = spec[0]
+        mode = current_mode(modes)
+        if mode is None:
+            return
+        i = 2
+        if spec[i] == 'primary':
+            i += 1
+        (w, h), (x, y) = res_and_pos(spec[i])
+        if x <= args.x < args.x + w and y <= args.y < args.y + h:
+            yield output
+            if args.single:
+                return
+
+
+def blocks(stream):
+    buffer = []
+    for line in stream:
+        buffer.append(line.decode().removesuffix('\n'))
+        if len(buffer) > 1 and not line[:1].isspace():
+            yield buffer[:-1]
+            del buffer[:-1]
+    if buffer:
+        yield buffer
+
+
+with Popen([ 'xrandr', '--current', '--query' ], stdout=PIPE) as prc:
+    assert prc.stdout is not None
+    results = [ match for block in blocks(prc.stdout) for match in process_block(block) ]
+    if code := prc.wait():
+        exit(code)
+if not results:
+    exit(1)
+print(*results, sep='\n')
