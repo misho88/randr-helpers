@@ -49,7 +49,7 @@ def process_block(block):
         if spec[i] == 'primary':
             i += 1
         (w, h), (x, y) = res_and_pos(spec[i])
-        if True or x <= args.x < x + w and y <= args.y < y + h:
+        if x <= args.x < x + w and y <= args.y < y + h:
             yield output
 
 
