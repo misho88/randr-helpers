@@ -1,6 +1,6 @@
 CFLAGS=-Wall -Wextra
 BIN=/usr/local/bin
-EXE=randr-list randr-watch randr-select randr-current randr-case
+EXE=randr-case randr-current randr-list randr-select randr-watch randr-which-outputs
 
 all: randr-list randr-watch randr-select
 
